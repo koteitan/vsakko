@@ -28,7 +28,7 @@ var initEvent = function(can){
   can.onmouseup    = addEvent;
   can.onmouseout   = addEvent;
   can.onmousewheel = addEvent;
-//  window.onkeydown       = addEvent;
+  window.onkeydown = addEvent;
 };
 // addEvent(Event e)
 var addEvent = function(e){

@@ -146,8 +146,27 @@ var handleMouseUp = function(){
   var sgndir = [Math.sign(dir[0]), Math.sign(dir[1])];
   var eraseindex = absdir[0]>absdir[1]?1:0;
   sgndir[eraseindex] = 0;
-  moveGame(sgndir);
+  if(absdir.max()>10)
+    moveGame(sgndir);
 }
 var handleMouseWheel = function(){
+}
+var handleKeyDown = function(e){
+  var k = e.key;
+  var key2dir = [
+    //x, y
+    ["ArrowLeft" ,[-1, 0]],
+    ["ArrowRight",[+1, 0]],
+    ["ArrowUp"   ,[ 0,-1]],
+    ["ArrowDown" ,[ 0,+1]],
+    ["a"         ,[-1, 0]],
+    ["d"         ,[+1, 0]],
+    ["w"         ,[ 0,-1]],
+    ["s"         ,[ 0,+1]],
+    ["x"         ,[ 0,+1]]
+  ];
+  for(var i=0;i<key2dir.length;i++){
+    if(k==key2dir[i][0]) moveGame(key2dir[i][1]);
+  }
 }
 
