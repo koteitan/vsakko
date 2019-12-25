@@ -1,2 +1,2 @@
 # Ackermann worm
-![Explanation](/image.jog)
+![Explanation](/image.jpg)
