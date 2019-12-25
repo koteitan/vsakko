@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
-<head><title>Ackermann worm</title>
-<meta http-equiv="Content-type" content="text/html; charset=sjis">
+<head><title>アッコとドッゴとレプリの果てのない散歩</title>
+<meta http-equiv="Content-type" content="text/html; charset=utf-8">
 <meta http-equiv="Content-Style-Type" content="text/css">
 <script type="text/javascript" src="https://code.jquery.com/jquery-1.12.0.min.js"></script>
 <script type="text/javascript" src="./exarray.js"></script>
@@ -23,13 +23,36 @@
   hr{border-style:solid}
   canvas{padding:0px;margin:0px}
   .console{font-family:MS Gothic;color:white;background-color:black}
-  --></style>
+  .dog{color:green}
+  .rep{color:blue}
+--></style>
 </head>
 <body>
-<h2>Ackermann worm</h2>
+<h2>アッコとドッゴとレプリの果てのない散歩</h2>
 <canvas id="outcanvas" width=600px height=600px style="border-style:solid"></canvas><br>
+<h2>物語</h2>
+<p>私の名前はアッコといいます。<br>
+私と<span class="dog">ドッゴ</span>と<span class="rep">レプリ</span>が家に居ます。<br>
+３人とも初めは３という値を持っています。<br>
+３人は仲良しなので、無限の広さを持つ荒野に一緒に散歩に出かけます。<br>
+一緒にいる３人が一緒に歩くと、<span class="rep">レプリ</span>は疲れて１つ減り、動く前の場所に「私」「１つ少なくなった<span class="dog">ドッゴ</span>」のコピーが残されます。<br>
+<span class="rep">レプリ</span>のいる場所の<span class="dog">ドッゴ</span>が１以上で、<span class="rep">レプリ</span>が０の場合は、<span class="dog">ドッゴ</span>は優しいので、自分を分けてあげることにより、<span class="dog">ドッゴ</span>が１減り、<span class="rep">レプリ</span>が１増えます。<br>
+<span class="rep">レプリ</span>のいる場所の<span class="dog">ドッゴ</span>が０で、私が１以上の場合は、<span class="rep">レプリ</span>の値が<span class="dog">ドッゴ</span>にコピーされ、私が１つ減ります。<br>
+<span class="rep">レプリ</span>のいる場所の<span class="dog">ドッゴ</span>も私も両方０の場合は、<span class="rep">レプリ</span>はその場所にいる弱った私と<span class="dog">ドッゴ</span>を食べて、その場所の私と<span class="dog">ドッゴ</span>は居なくなり、レプリは１つ増えて、動く前の場所に戻ります。</p>
 
-<address id="address">Ackermann worm version <span id="versiondisplay"></span><br>
+<p>３人は、すでに別の私と<span class="dog">ドッゴ</span>が居る場所には動けません。<br>
+私と<span class="dog">ドッゴ</span>の２人しかその場所に居ない場合は、その私と<span class="dog">ドッゴ</span>は動きません。</p>
+
+<p>家に戻ってきたとき、<span class="rep">レプリ</span>の値はいくつになっているでしょうか？</p>
+
+<h2>ゲーム</h2>
+<ul>
+  <li>スワイプ、キーボード、マウスなどで上の図が動かせます。<br>
+  <li>キーボードはカーソルキーかwasdが使えます。<br>
+  <li>動けなくなった場合はESCで元に戻ります。<br>
+  <li>実際の荒野は無限ですが、このゲームでは荒野は有限にしてあります。<br>
+<ul>
+<address id="address">"Akko and Doggo and Replie in the Endless Wilderness" version <span id="versiondisplay"></span><br>
 programmed by <a href='https://twitter.com/koteitan/'>koteitan</a> code at <a href='https://github.com/koteitan/ackermann-puzzle/'>github</a><br>
 </address>
 <textarea id="debug" cols=50 rows=10 style='display:none'></textarea>
