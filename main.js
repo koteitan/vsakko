@@ -33,6 +33,8 @@ var initGame=function(){
   movstack[movstacki]=pp; //save now
   isdraw = true;
   isope = true;
+  isdrawreplie=false;
+  reqretry=false;
 }
 
 //move
@@ -44,7 +46,7 @@ var moveGame=function(dir){
   //check wall
   if(pp1[0]<0 || pp1[1]<0 || pp1[0]>=ww[0] || pp1[1]>=ww[1])return;
   //check zero
-  if(map[pp1[0]][pp1[1]]!=-1)return;
+ // if(map[pp1[0]][pp1[1]]!=-1)return;
 
   //move
   map[pp1[0]][pp1[1]]=map[pp[0]][pp[1]];
@@ -60,7 +62,7 @@ var moveGame=function(dir){
   //check replie HP
   if(rp==0){
     isope = false;
-    setTimeout(feedReplie, 300);
+    setTimeout(feedReplie, 100);
   }else{
     isope = true;
   }
@@ -72,7 +74,7 @@ var feedReplie=function(){
   map[pp[0]][pp[1]]--;
   rp++;
   if(map[pp[0]][pp[1]]==0){
-    setTimeout(moveEater, 300);
+    setTimeout(moveEater, 50);
     isope = false;
   }else{
     isope = true;
@@ -89,9 +91,12 @@ var moveEater=function(){
     movstacki+=movstack.length;
     movstacki%=movstack.length;
     pp = movstack[movstacki].clone();
-    setTimeout(moveEater,300);
+    setTimeout(moveEater,50);
   }else{
     //sanity
+    if(map[pp[0]][pp[1]]==-1){
+      gameover();
+    }
     isope = true;
   }
   isdraw = true;
@@ -104,7 +109,14 @@ var procAll=function(){
     isdraw = false;
   }
 }
-
+var reqretry=false;
+var isdrawreplie=false;
+var gameover=function(){
+  isdrawreplie=true;
+  isdraw=true;
+  reqretry=true;
+  isdrawreplie=true;
+}
 window.onresize = function(){ //browser resize
   var wx,wy;
   var agent = navigator.userAgent;
@@ -160,7 +172,7 @@ var procDraw = function(){
     for(var yi=0;yi<ww[1];yi++){
       var isplayer = xi==pp[0] && yi==pp[1];
       var rpx;
-      if(map[xi][yi]!=-1){
+      if(map[xi][yi]!=-1||isdrawreplie){
         var strmap=String(map[xi][yi]);
         var sx=Math.floor(sw[0]/(ww[0]+2));
         var sy=Math.floor(sw[1]/(ww[1]+2));
@@ -180,7 +192,7 @@ var procDraw = function(){
         ctx.font = String(fy)+'px Segoe UI';
         var x=Math.floor(sx*(xi+1.5)-fx/2);
         var y=Math.floor(sy*(yi+1.5)+fy/2);
-        ctx.fillText(strmap,x,y);
+        if(map[xi][yi]!=-1)ctx.fillText(strmap,x,y);
         if(isplayer){
           //replie
           ctx.fillStyle='blue';
@@ -197,6 +209,10 @@ var procDraw = function(){
 //event---------------------
 var isope = false;
 var handleMouseDown = function(){
+  if(reqretry){
+    //return
+    setTimeout(initGame,10);
+  }
 }
 var handleMouseDragging = function(){
 }
@@ -212,6 +228,10 @@ var handleMouseUp = function(){
 var handleMouseWheel = function(){
 }
 var handleKeyDown = function(e){
+  if(reqretry){
+    setTimeout(initGame,10);
+    return;
+  }
   var k = e.key;
   var key2dir = [
     //x, y
