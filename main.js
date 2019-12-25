@@ -68,6 +68,8 @@ var procDraw = function(){
 
   //draw grid
   ctx.lineWidth=1;
+  ctx.strokeStyle="black";
+  ctx.fillStyle="black";
   for(var xi=0;xi<ww[0];xi++){
     for(var yi=0;yi<ww[1];yi++){
       var sx=Math.floor(sw[0]/(ww[0]+2));
@@ -82,6 +84,7 @@ var procDraw = function(){
 
   //draw text
   var strrp=String(rp);
+  var rpr = 0.7; //size ratio of replie
   for(var xi=0;xi<ww[0];xi++){
     for(var yi=0;yi<ww[1];yi++){
       var isplayer = xi==pp[0] && yi==pp[1];
@@ -90,29 +93,31 @@ var procDraw = function(){
         var strmap=String(map[xi][yi]);
         var sx=Math.floor(sw[0]/(ww[0]+2));
         var sy=Math.floor(sw[1]/(ww[1]+2));
-        var fy=Math.floor(sw[1]/(ww[1]+2)/2*(isplayer?2/3:1));
+        var fy=Math.floor(sw[1]/(ww[1]+2)/2);
         ctx.font = String(fy)+'px Segoe UI';
-        var mapx=ctx.measureText(strmap);
-        var fx=mapx;
-        var rpx = isplayer? ctx.measureText(strrp)/2:0;
-        var rx=fx>sx? sx/fx : 1;
-        var ry=fy>sy? sy/fy : 1;
+        var fx=ctx.measureText(strmap).width;
+        var rpx = isplayer? ctx.measureText(strrp).width/2:0;
+        var rx=fx>sx?sx/fx:1;
+        var ry=fy>sy?sy/fy:1;
         var r=[rx,ry].min();
         fx*=r;
         fy*=r;
+        rpx*=r;
         //parent
+        ctx.fillStyle= isplayer?'red':'black';
         ctx.strokeStyle= isplayer?'red':'black';
         ctx.font = String(fy)+'px Segoe UI';
-        var x=Math.floor(sx*(xi+1)+fx/2);
-        var y=Math.floor(sy*(yi+1)+(fy+(isplayer?fy/2:0))/2);
-        ctx.strokeText(strmap,x,y);
+        var x=Math.floor(sx*(xi+1.5)-fx/2);
+        var y=Math.floor(sy*(yi+1.5)+fy/2);
+        ctx.fillText(strmap,x,y);
         if(isplayer){
           //replie
+          ctx.fillStyle='blue';
           ctx.strokeStyle='blue';
-          var x=Math.floor(sx*(xi+1)+(fx+mapx)/2);
-          var y=Math.floor(sy*(yi+1)+fy/2);
-          ctx.font = String(fy/2)+'px Segoe UI';
-          ctx.strokeText(strrp,x,y);
+          var x=Math.floor(sx*(xi+1.5)+fx/2);
+          var y=Math.floor(sy*(yi+1.5)+fy/2-fy*0.5);
+          ctx.font = String(fy*rpr)+'px Segoe UI';
+          ctx.fillText(strrp,x,y);
         }
       }
     }
