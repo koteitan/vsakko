@@ -126,6 +126,7 @@ var moveEater=function(){
 //game loop ------------------
 var procAll=function(){
   procEvent();
+  procDragEvent();
   if(isdraw){
     procDraw();
     isdraw = false;
@@ -247,14 +248,51 @@ var handleMouseDown = function(){
 }
 var handleMouseDragging = function(){
 }
+var procDragEvent = function(){
+  if(isDragging){
+    switch(dragstate){
+      case 0: // first move
+        var dir = sub(mousePos, mouseDownPos);
+        var absdir = [Math.abs(dir[0]), Math.abs(dir[1])];
+        if(absdir.max()>10){
+          handleMouseUp(); //move immediately
+          nodraggingmove = true;
+          dragcount = dragcount_long;
+          dragstate = 1;
+        }
+        break;
+      case 1: // second move
+        if(dragcount <= 0){
+          handleMouseUp();
+          nodraggingmove = true;
+          dragcount = dragcount_short;
+        }else{
+          dragcount -= 1/frameRate;
+        }
+        break;
+      default:
+        break;
+    }
+  }else{
+    dragstate = 0;
+  }
+}
+var dragstate = 0;
+var dragcount_short = 0.2;
+var dragcount_long  = 0.7;
+var nodraggingmove = false;
+var dragcount;
+
 var handleMouseUp = function(){
-  var dir = sub(mouseUpPos, mouseDownPos);
+  var dir = sub(mousePos, mouseDownPos);
   var absdir = [Math.abs (dir[0]), Math.abs (dir[1])];
   var sgndir = [Math.sign(dir[0]), Math.sign(dir[1])];
   var eraseindex = absdir[0]>absdir[1]?1:0;
   sgndir[eraseindex] = 0;
-  if(absdir.max()>10)
+  if(absdir.max()>10 && nodraggingmove){
     moveGame(sgndir);
+    nodraggingmove = false;
+  }
 }
 var handleMouseWheel = function(){
 }
