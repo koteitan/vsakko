@@ -164,15 +164,3 @@ var removeClientOffset = function(e){
 
  */
 
-
-
-
-
-
-
-
-
-
-
-
-

@@ -25,6 +25,18 @@ var initGame=function(){
   rp=5;
   isRequestedDraw = true;
 }
+var moveGame=function(dir){
+  var pp1=add(dir,pp);
+  if(pp1[0]<0 || pp1[1]<0 || pp1[0]>ww[0] || pp1[1]>ww[0]){
+    //wall
+    return;
+  }
+  map[pp1[0]][pp1[1]]=map[pp [0]][pp [0]];
+  map[pp [0]][pp [1]]--;
+  rp--;
+  pp=pp1.clone();
+  isRequestedDraw = true;
+}
 //game loop ------------------
 var procAll=function(){
   procEvent();
@@ -124,19 +136,18 @@ var procDraw = function(){
   }
 }
 //event---------------------
-var downpos=[-1,-1];// start of drag
-var movpos =[-1,-1];// while drag
 var handleMouseDown = function(){
-  movpos[0] = downpos[0];
-  movpos[1] = downpos[1];
 }
 var handleMouseDragging = function(){
-  isRequestedDraw = true;
 }
 var handleMouseUp = function(){
-  isRequestedDraw = true;
+  var dir = sub(mouseUpPos, mouseDownPos);
+  var absdir = [Math.abs (dir[0]), Math.abs (dir[1])];
+  var sgndir = [Math.sign(dir[0]), Math.sign(dir[1])];
+  var eraseindex = absdir[0]>absdir[1]?1:0;
+  sgndir[eraseindex] = 0;
+  moveGame(sgndir);
 }
 var handleMouseWheel = function(){
-  isRequestedDraw = true;
 }
 
