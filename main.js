@@ -9,7 +9,7 @@ window.onload = function(){
 }
 //game-------------------
 var size=9;
-var ww=[size,size]; //world width
+var ww=[size,size,2]; //world width
 var map;
 var pp; //player position
 var rp; //hit point of replie
@@ -22,12 +22,13 @@ var initGame=function(){
   for(var x=0;x<ww[0];x++){
     map[x]=new Array(ww[1]);
     for(var y=0;y<ww[1];y++){
-      map[x][y]=-1;
+      map[x][y]=[-1,-1];
     }
   }
   pp=[Math.floor((ww[0]-1)/2),Math.floor((ww[1]-1)/2)];
-  map[pp[0]][pp[1]]=5;
-  rp=5;
+  map[pp[0]][pp[1]][0]=2;
+  map[pp[0]][pp[1]][1]=2;
+  rp                  =2;
   movstack=new Array(ww[0]*ww[1]*2);
   movstacki=0;
   movstack[movstacki]=pp; //save now
@@ -46,11 +47,17 @@ var moveGame=function(dir){
   //check wall
   if(pp1[0]<0 || pp1[1]<0 || pp1[0]>=ww[0] || pp1[1]>=ww[1])return;
   //check zero
- // if(map[pp1[0]][pp1[1]]!=-1)return;
+  if(map[pp1[0]][pp1[1]][0]!=-1)return;
 
   //move
-  map[pp1[0]][pp1[1]]=map[pp[0]][pp[1]];
-  map[pp [0]][pp [1]]--;
+  if(map[pp1[0]][pp1[1]][0]==-1){
+    map[pp1[0]][pp1[1]][0]=map[pp[0]][pp[1]][0];
+    map[pp1[0]][pp1[1]][1]=map[pp[0]][pp[1]][1];
+  }else{
+    map[pp1[0]][pp1[1]][0]=[map[pp1[0]][pp1[1]][0], map[pp[0]][pp[1]][0]].max();
+    map[pp1[0]][pp1[1]][1]=[map[pp1[0]][pp1[1]][1], map[pp[0]][pp[1]][1]].max();
+  }
+  map[pp [0]][pp [1]][1]--;
   rp--;
   pp=pp1.clone();
 
@@ -58,6 +65,13 @@ var moveGame=function(dir){
   movstacki++;
   movstacki%=movstack.length;
   movstack[movstacki]=pp1.clone();
+
+  //check zeros
+  if(map[pp[0]][pp[1]][1]==0){
+    setTimeout(moveEater, 50);
+    isope = false;
+    return;
+  }
 
   //check replie HP
   if(rp==0){
@@ -71,9 +85,9 @@ var moveGame=function(dir){
 
 // feed replie
 var feedReplie=function(){
-  map[pp[0]][pp[1]]--;
+  map[pp[0]][pp[1]][1]--; //reduce middo
   rp++;
-  if(map[pp[0]][pp[1]]==0){
+  if(map[pp[0]][pp[1]][1]==0){
     setTimeout(moveEater, 50);
     isope = false;
   }else{
@@ -81,20 +95,28 @@ var feedReplie=function(){
   }
   isdraw = true;
 }
+// move zero eater
 var moveEater=function(){
-  if(map[pp[0]][pp[1]]==0){
-    //eat zero
-    map[pp[0]][pp[1]]=-1;
-    rp++;//recover
-    //undo motion
-    movstacki--;
-    movstacki+=movstack.length;
-    movstacki%=movstack.length;
-    pp = movstack[movstacki].clone();
-    setTimeout(moveEater,50);
+  if(map[pp[0]][pp[1]][1]==0){ // middo is still zero
+    if(map[pp[0]][pp[1]][0]==0){ // parent is zero too
+      //eat zeros
+      map[pp[0]][pp[1]][0]=-1;
+      map[pp[0]][pp[1]][1]=-1;
+      rp++;//recover
+      //undo motion
+      movstacki--;
+      movstacki+=movstack.length;
+      movstacki%=movstack.length;
+      pp = movstack[movstacki].clone();
+      setTimeout(moveEater,50);
+    }else{ // middo is nonzero
+      map[pp[0]][pp[1]][0]--; // reduce parent
+      map[pp[0]][pp[1]][1]=rp; // replie is copied into middo
+      isope = true;
+    }
   }else{
     //sanity
-    if(map[pp[0]][pp[1]]==-1){
+    if(map[pp[0]][pp[1]][0]==-1){
       gameover();
     }
     isope = true;
@@ -172,34 +194,43 @@ var procDraw = function(){
     for(var yi=0;yi<ww[1];yi++){
       var isplayer = xi==pp[0] && yi==pp[1];
       var rpx;
-      if(map[xi][yi]!=-1||isdrawreplie){
-        var strmap=String(map[xi][yi]);
+      if(map[xi][yi][0]!=-1||isdrawreplie){
+        var strmap0=String(map[xi][yi][0]);
+        var strmap1=String(map[xi][yi][1]);
         var sx=Math.floor(sw[0]/(ww[0]+2));
         var sy=Math.floor(sw[1]/(ww[1]+2));
         var fy=Math.floor(sw[1]/(ww[1]+2)/2);
         ctx.font = String(fy)+'px Segoe UI';
-        var fx=ctx.measureText(strmap).width;
-        var rpx = isplayer? ctx.measureText(strrp).width/2:0;
-        var rx=fx>sx?sx/fx:1;
-        var ry=fy>sy?sy/fy:1;
+        var fx=[    ctx.measureText(strmap0).width,
+                    ctx.measureText(strmap1).width*rpr,
+          isplayer? ctx.measureText(strrp  ).width*rpr*rpr:0];
+        var rx=fx.sum()>sx?sx/fx.sum():1;
+        var ry=fy      >sy?sy/fy      :1;
         var r=[rx,ry].min();
-        fx*=r;
-        fy*=r;
-        rpx*=r;
+        fx =mulkv(r,fx);
+        fy =      r*fy;
+        rpx=      r*rpx;
         //parent
-        ctx.fillStyle= isplayer?'red':'black';
+        ctx.fillStyle  = isplayer?'red':'black';
         ctx.strokeStyle= isplayer?'red':'black';
         ctx.font = String(fy)+'px Segoe UI';
-        var x=Math.floor(sx*(xi+1.5)-fx/2);
+        var x=Math.floor(sx*(xi+1.5)-fx.sum()/2);
         var y=Math.floor(sy*(yi+1.5)+fy/2);
-        if(map[xi][yi]!=-1)ctx.fillText(strmap,x,y);
+        if(map[xi][yi][0]!=-1) ctx.fillText(strmap0,x,y);
+        //middo
+        ctx.fillStyle  = 'green';
+        ctx.strokeStyle= 'green';
+        ctx.font = String(fy*rpr)+'px Segoe UI';
+        var x=Math.floor(sx*(xi+1.5)-fx.sum()/2+fx[0]);
+        var y=Math.floor(sy*(yi+1.5)+fy/2-fy*0.5);
+        if(map[xi][yi][0]!=-1) ctx.fillText(strmap1,x,y);
         if(isplayer){
           //replie
           ctx.fillStyle='blue';
           ctx.strokeStyle='blue';
-          var x=Math.floor(sx*(xi+1.5)+fx/2);
-          var y=Math.floor(sy*(yi+1.5)+fy/2-fy*0.5);
-          ctx.font = String(fy*rpr)+'px Segoe UI';
+          var x=Math.floor(sx*(xi+1.5)-fx.sum()/2+fx[0]+fx[1]);
+          var y=Math.floor(sy*(yi+1.5)+fy/2-fy);
+          ctx.font = String(fy*rpr)*rpr+'px Segoe UI';
           ctx.fillText(strrp,x,y);
         }
       }
