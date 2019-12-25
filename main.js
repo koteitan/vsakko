@@ -26,9 +26,9 @@ var initGame=function(){
     }
   }
   pp=[Math.floor((ww[0]-1)/2),Math.floor((ww[1]-1)/2)];
-  map[pp[0]][pp[1]][0]=2;
-  map[pp[0]][pp[1]][1]=2;
-  rp                  =2;
+  map[pp[0]][pp[1]][0]=3;
+  map[pp[0]][pp[1]][1]=3;
+  rp                  =3;
   movstack=new Array(ww[0]*ww[1]*2);
   movstacki=0;
   movstack[movstacki]=pp; //save now
