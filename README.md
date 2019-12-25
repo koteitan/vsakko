@@ -1,1 +1,2 @@
-# Ackermann puzzle
+# Ackermann worm
+![Explanation](/image.jog)

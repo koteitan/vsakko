@@ -8,41 +8,100 @@ window.onload = function(){
   setInterval(procAll, 1000/frameRate); //enter gameloop
 }
 //game-------------------
-var ww=[5,5]; //world width
+var size=9;
+var ww=[size,size]; //world width
 var map;
 var pp; //player position
-var rp=5; //hit point of replie
+var rp; //hit point of replie
+var movstack;//motion stack
+var movstacki;//motion stack index
+
+//init
 var initGame=function(){
   map=new Array(ww[0]);
   for(var x=0;x<ww[0];x++){
     map[x]=new Array(ww[1]);
     for(var y=0;y<ww[1];y++){
-      map[x][y]=0;
+      map[x][y]=-1;
     }
   }
   pp=[Math.floor((ww[0]-1)/2),Math.floor((ww[1]-1)/2)];
   map[pp[0]][pp[1]]=5;
   rp=5;
-  isRequestedDraw = true;
+  movstack=new Array(ww[0]*ww[1]*2);
+  movstacki=0;
+  movstack[movstacki]=pp; //save now
+  isdraw = true;
+  isope = true;
 }
+
+//move
 var moveGame=function(dir){
+  if(!isope) return;
+
   var pp1=add(dir,pp);
-  if(pp1[0]<0 || pp1[1]<0 || pp1[0]>ww[0] || pp1[1]>ww[0]){
-    //wall
-    return;
-  }
-  map[pp1[0]][pp1[1]]=map[pp [0]][pp [0]];
+
+  //check wall
+  if(pp1[0]<0 || pp1[1]<0 || pp1[0]>=ww[0] || pp1[1]>=ww[1])return;
+  //check zero
+  if(map[pp1[0]][pp1[1]]!=-1)return;
+
+  //move
+  map[pp1[0]][pp1[1]]=map[pp[0]][pp[1]];
   map[pp [0]][pp [1]]--;
   rp--;
   pp=pp1.clone();
-  isRequestedDraw = true;
+
+  //save motion
+  movstacki++;
+  movstacki%=movstack.length;
+  movstack[movstacki]=pp1.clone();
+
+  //check replie HP
+  if(rp==0){
+    isope = false;
+    setTimeout(feedReplie, 300);
+  }else{
+    isope = true;
+  }
+  isdraw = true;
+}
+
+// feed replie
+var feedReplie=function(){
+  map[pp[0]][pp[1]]--;
+  rp++;
+  if(map[pp[0]][pp[1]]==0){
+    setTimeout(moveEater, 300);
+    isope = false;
+  }else{
+    isope = true;
+  }
+  isdraw = true;
+}
+var moveEater=function(){
+  if(map[pp[0]][pp[1]]==0){
+    //eat zero
+    map[pp[0]][pp[1]]=-1;
+    rp++;//recover
+    //undo motion
+    movstacki--;
+    movstacki+=movstack.length;
+    movstacki%=movstack.length;
+    pp = movstack[movstacki].clone();
+    setTimeout(moveEater,300);
+  }else{
+    //sanity
+    isope = true;
+  }
+  isdraw = true;
 }
 //game loop ------------------
 var procAll=function(){
   procEvent();
-  if(isRequestedDraw){
+  if(isdraw){
     procDraw();
-    isRequestedDraw = false;
+    isdraw = false;
   }
 }
 
@@ -55,14 +114,14 @@ window.onresize = function(){ //browser resize
   document.getElementById("outcanvas").width = wx;
   document.getElementById("outcanvas").height= wy;
   sw=[can.width, can.height];
-  isRequestedDraw = true;
+  isdraw = true;
 };
 // graphics ------------------------
 var ctx;
 var can;
 var fontsize = 15;
 var radius = 15;
-var isRequestedDraw = true;
+var isdraw = true;
 var frameRate = 60; //[fps]
 var sw;
 //init
@@ -101,7 +160,7 @@ var procDraw = function(){
     for(var yi=0;yi<ww[1];yi++){
       var isplayer = xi==pp[0] && yi==pp[1];
       var rpx;
-      if(map[xi][yi]!=0){
+      if(map[xi][yi]!=-1){
         var strmap=String(map[xi][yi]);
         var sx=Math.floor(sw[0]/(ww[0]+2));
         var sy=Math.floor(sw[1]/(ww[1]+2));
@@ -136,6 +195,7 @@ var procDraw = function(){
   }
 }
 //event---------------------
+var isope = false;
 var handleMouseDown = function(){
 }
 var handleMouseDragging = function(){
