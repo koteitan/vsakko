@@ -24,8 +24,10 @@ var gamestate_proc = 1;
 var gamestate_end  = 2;
 var gamestate = gamestate_init;
 var gamecount     = 0;
-var gamecount_max = 0.5; // operation interval
+var gamecount_max = 0.3; // operation interval
 var cantmove;
+var score;
+var maxrp;
 //world
 var size=9;
 var ww=[size,size,2]; //world width
@@ -49,7 +51,7 @@ var initGame=function(){
   for(var x=0;x<ww[0];x++){
     map[x]=new Array(ww[1]);
     for(var y=0;y<ww[1];y++){
-      map[x][y]=[-1,-1];
+      map[x][y]=[-1,-1,-1]; //akko, doggo, player index
     }
   }
 
@@ -59,25 +61,31 @@ var initGame=function(){
     [ww[0]-1, ww[1]-1-Math.floor((ww[1]-1)/2)]
   ];
   dp=[[+1,0],[-1,0]];
-  pcolor=["red"  ,"magenta"]; //color of akko
-  dcolor=["green","purple"];  //color of doggo
-  rcolor=["blue" ,"cyan"];    //color of replie
+  ccolor=["Black","RebeccaPurple"];    //color of copied akko
+  pcolor=["Red"  ,"Magenta"]; //color of akko
+  dcolor=["Green","Purple"];  //color of doggo
+  rcolor=["Blue" ,"Cyan"];    //color of replie
   movstack    =new Array(players);
   movstacki   =new Array(players);
   isope       =new Array(players);
   isdrawreplie=new Array(players);
   rp          =new Array(players);
   cantmove    =new Array(players);
+  score       =new Array(players);
+  maxrp       =new Array(players);
   for(var p=0;p<players;p++){
     map[pp[p][0]][pp[p][1]][0]=3;
     map[pp[p][0]][pp[p][1]][1]=3;
+    map[pp[p][0]][pp[p][1]][2]=p;
     movstack [p]=new Array(ww[0]*ww[1]*2);
     movstacki[p]=0;
     movstack[p][movstacki]=pp[p]; //save now
     isope       [p]= true;
     isdrawreplie[p]=false;
     cantmove    [p]=false;
-    rp[p]=3;
+    score       [p]= 0;
+    rp          [p]= 3;
+    maxrp       [p]= 3;
   }
   gamecount = gamecount_max;
   gamestate = gamestate_init;
@@ -116,7 +124,7 @@ var moveGame=function(p){
       rotcount++;
       if(rotcount>=4){
         cantmove[p]=true;
-        if(cantmove[human]&&cantmnove[com]){
+        if(cantmove[human]&&cantmove[com]){
           gameover(p); //4men soka
         }
         return;
@@ -125,8 +133,11 @@ var moveGame=function(p){
   }
 
   //move
+  score[p] += 10;
+
   map[pp1[0]][pp1[1]][0]=map[pp[p][0]][pp[p][1]][0]; //new.akko
   map[pp1[0]][pp1[1]][1]=map[pp[p][0]][pp[p][1]][1]; //new.doggo
+  map[pp1[0]][pp1[1]][2]=p;                          //new.playerindex
   map[pp[p][0]][pp[p][1]][1]--; //old.doggo <- reduced
   rp[p]--;
   pp[p]=pp1.clone();
@@ -172,7 +183,10 @@ var moveEater=function(p){
       //eat zeros
       map[pp[p][0]][pp[p][1]][0]=-1;
       map[pp[p][0]][pp[p][1]][1]=-1;
+      map[pp[p][0]][pp[p][1]][2]=-1;
       rp[p]++;//recover
+      maxrp[p]=[rp[p], maxrp[p]].max();
+      score[p]+=maxrp[p]*100;
       //undo motion
       movstacki[p]--;
       movstacki[p]+=movstack[p].length;
@@ -228,11 +242,11 @@ var procDraw = function(){
   //draw grid
   ctx.lineWidth=1;
   ctx.strokeStyle="black";
-  ctx.fillStyle="black";
+  ctx.fillStyle  ="black";
+  var sx=Math.floor(sw[0]/(ww[0]+2)); // size of cube
+  var sy=Math.floor(sw[1]/(ww[1]+2)); // size of cube
   for(var xi=0;xi<ww[0];xi++){
     for(var yi=0;yi<ww[1];yi++){
-      var sx=Math.floor(sw[0]/(ww[0]+2));
-      var sy=Math.floor(sw[1]/(ww[1]+2));
       var x=Math.floor(sx*(xi+1));
       var y=Math.floor(sy*(yi+1));
       ctx.beginPath();
@@ -241,9 +255,22 @@ var procDraw = function(){
     }
   }
 
+  //draw score
+  for(var p=0;p<players;p++){
+    var fx = ctx.measureText(score[p]).width;
+    var fy = sw[1]/(ww[1]+2)/3;
+    var x = sx+p*(sx*ww[0]-fx);
+    var y = sy-sy*0.1;
+    ctx.strokeStyle=pcolor[p];
+    ctx.fillStyle  =pcolor[p];
+    ctx.font = String(Math.floor(fy))+'px Segoe UI';
+    ctx.fillText(score[p],x,y);
+    if(gamestate==gamestate_end){
+      ctx.fillText(score[p]>score[p^1]?"I WIN!!":"I lose..",x,y-sy/3);
+    }
+  }
+
   var rpr = 0.7; //size ratio of replie
-  var sx=Math.floor(sw[0]/(ww[0]+2)); // size of cube
-  var sy=Math.floor(sw[1]/(ww[1]+2)); // size of cube
   //draw text
   for(var xi=0;xi<ww[0];xi++){
     for(var yi=0;yi<ww[1];yi++){
@@ -269,24 +296,25 @@ var procDraw = function(){
           ctx.fillStyle  = pcolor[p];
           ctx.strokeStyle= pcolor[p];
         }else{
-          ctx.fillStyle  = "black";
-          ctx.strokeStyle= "black";
+          _p=map[xi][yi][2];
+          ctx.fillStyle  = ccolor[_p];
+          ctx.strokeStyle= ccolor[_p];
         }
         ctx.font = String(fy)+'px Segoe UI';
         var x=Math.floor(sx*(xi+1.5)-fx.sum()/2);
         var y=Math.floor(sy*(yi+1.5)+fy      /2);
         if(map[xi][yi][0]!=-1) ctx.fillText(strmap0,x,y);
         //middo
-        ctx.fillStyle  = 'green';
-        ctx.strokeStyle= 'green';
+        ctx.fillStyle  = dcolor[p];
+        ctx.strokeStyle= dcolor[p];
         ctx.font = String(fy*rpr)+'px Segoe UI';
         var x=Math.floor(sx*(xi+1.5)-fx.sum()/2+fx[0]);
         var y=Math.floor(sy*(yi+1.5)+fy/2-fy*0.5);
         if(map[xi][yi][0]!=-1) ctx.fillText(strmap1,x,y);
         if(p<2){
           //replie
-          ctx.fillStyle='blue';
-          ctx.strokeStyle='blue';
+          ctx.fillStyle  =rcolor[p];
+          ctx.strokeStyle=rcolor[p];
           var x=Math.floor(sx*(xi+1.5)-fx.sum()/2+fx[0]+fx[1]);
           var y=Math.floor(sy*(yi+1.5)+fy/2-fy);
           ctx.font = String(fy*rpr*rpr)+'px Segoe UI';
