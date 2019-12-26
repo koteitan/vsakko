@@ -19,13 +19,20 @@ var procAll=function(){
 }
 //game-------------------
 //controls
+var gamestate_init = 0;
+var gamestate_proc = 1;
+var gamestate_end  = 2;
+var gamestate = gamestate_init;
 var gamecount     = 0;
-var gamecount_max = 0.1; // operation interval
+var gamecount_max = 0.5; // operation interval
+var cantmove;
 //world
 var size=9;
 var ww=[size,size,2]; //world width
 var map;
 //players
+var human   = 0;
+var com     = 1;
 var players = 2;//player vs com
 //commons
 var pp; //player position
@@ -60,6 +67,7 @@ var initGame=function(){
   isope       =new Array(players);
   isdrawreplie=new Array(players);
   rp          =new Array(players);
+  cantmove    =new Array(players);
   for(var p=0;p<players;p++){
     map[pp[p][0]][pp[p][1]][0]=3;
     map[pp[p][0]][pp[p][1]][1]=3;
@@ -68,35 +76,38 @@ var initGame=function(){
     movstack[p][movstacki]=pp[p]; //save now
     isope       [p]= true;
     isdrawreplie[p]=false;
+    cantmove    [p]=false;
     rp[p]=3;
   }
   gamecount = gamecount_max;
+  gamestate = gamestate_init;
   isdraw   = true;
-  reqretry = false;
 }
 var gameover=function(){
-  isdraw=true;
-  reqretry=true;
+  gamestate = gamestate_end;
+  isdraw = true;
 }
 //proc Game
 var procGame = function(){
-  gamecount-=1/frameRate;
-  if(gamecount<=0){
-    gamecount = gamecount_max;
-    procNpc();
-    for(var p=0;p<players;p++){
-      moveGame(p,dp[p]);
+  if(gamestate==gamestate_proc){
+    gamecount-=1/frameRate;
+    if(gamecount<=0){
+      gamecount = gamecount_max;
+      procNpc();
+      for(var p=0;p<players;p++){
+        moveGame(p);
+      }
     }
   }
 }
 //move
-var moveGame=function(p, dir){
-  if(!isope) return;
+var moveGame=function(p){
+  if(!isope[p]) return;
   
   var pp1;
   var rotcount = 0;
   while(true){
-    pp1=add(dir,pp[p]);
+    pp1=add(dp[p],pp[p]);
     //check wall
     if(pp1[0]>=0 && pp1[1]>=0 && pp1[0]<ww[0] && pp1[1]<ww[1] && map[pp1[0]][pp1[1]][0]==-1){
       break;
@@ -104,16 +115,19 @@ var moveGame=function(p, dir){
       dp[p]=mulxv([[0,-1],[+1,0]],dp[p]); //rotate
       rotcount++;
       if(rotcount>=4){
-        gameover(p); //4men soka
+        cantmove[p]=true;
+        if(cantmove[human]&&cantmnove[com]){
+          gameover(p); //4men soka
+        }
         return;
       }
     }
   }
 
   //move
-  map[pp1[0]][pp1[1]][0]=map[pp[p][0]][pp[p][1]][0];
-  map[pp1[0]][pp1[1]][1]=map[pp[p][0]][pp[p][1]][1];
-  map[pp[p][0]][pp[p][1]]--;
+  map[pp1[0]][pp1[1]][0]=map[pp[p][0]][pp[p][1]][0]; //new.akko
+  map[pp1[0]][pp1[1]][1]=map[pp[p][0]][pp[p][1]][1]; //new.doggo
+  map[pp[p][0]][pp[p][1]][1]--; //old.doggo <- reduced
   rp[p]--;
   pp[p]=pp1.clone();
 
@@ -152,7 +166,7 @@ var feedReplie=function(p){
   isdraw = true;
 }
 // move zero eater
-var moveEater=function(){
+var moveEater=function(p){
   if(map[pp[p][0]][pp[p][1]][1]==0){ // middo is still zero
     if(map[pp[p][0]][pp[p][1]][0]==0){ // parent is zero too
       //eat zeros
@@ -160,10 +174,10 @@ var moveEater=function(){
       map[pp[p][0]][pp[p][1]][1]=-1;
       rp[p]++;//recover
       //undo motion
-      movstacki--;
-      movstacki+=movstack.length;
-      movstacki%=movstack.length;
-      pp[p] = movstack[movstacki].clone();
+      movstacki[p]--;
+      movstacki[p]+=movstack[p].length;
+      movstacki[p]%=movstack[p].length;
+      pp[p] = movstack[p][movstacki[p]].clone();
       setTimeout(moveEater,50,p);
     }else{ // middo is nonzero
       map[pp[p][0]][pp[p][1]][0]--; // reduce parent
@@ -177,7 +191,7 @@ var moveEater=function(){
     }
     isope[p] = true;
   }
-  isdraw[p] = true;
+  isdraw = true;
 }
 window.onresize = function(){ //browser resize
   var wx,wy;
@@ -230,63 +244,70 @@ var procDraw = function(){
   var rpr = 0.7; //size ratio of replie
   var sx=Math.floor(sw[0]/(ww[0]+2)); // size of cube
   var sy=Math.floor(sw[1]/(ww[1]+2)); // size of cube
-  for(var p=0;p<players;p++){
-    //draw text
-    var strrp=String(rp[p]);
-    for(var xi=0;xi<ww[0];xi++){
-      for(var yi=0;yi<ww[1];yi++){
-        var isplayer = xi==pp[p][0] && yi==pp[p][1];
-        var rpx;
-        if(map[xi][yi][0]!=-1||isdrawreplie){
-          var strmap0=String(map[xi][yi][0]);
-          var strmap1=String(map[xi][yi][1]);
-          var fy=Math.floor(sw[1]/(ww[1]+2)/2);
-          ctx.font = String(fy)+'px Segoe UI';
-          var fx=[    ctx.measureText(strmap0).width,
-                      ctx.measureText(strmap1).width*rpr,
-            isplayer? ctx.measureText(strrp  ).width*rpr*rpr:0];
-          var rx=fx.sum()>sx?sx/fx.sum():1;
-          var ry=fy      >sy?sy/fy      :1;
-          var r=[rx,ry].min();
-          fx =mulkv(r,fx);
-          fy =      r*fy;
-          rpx=      r*rpx;
-          //parent
-          if(isplayer){
-            ctx.fillStyle  = pcolor[p];
-            ctx.strokeStyle= pcolor[p];
-          }
-          ctx.font = String(fy)+'px Segoe UI';
-          var x=Math.floor(sx*(xi+1.5)-fx.sum()/2);
-          var y=Math.floor(sy*(yi+1.5)+fy      /2);
-          if(map[xi][yi][0]!=-1) ctx.fillText(strmap0,x,y);
-          //middo
-          ctx.fillStyle  = 'green';
-          ctx.strokeStyle= 'green';
-          ctx.font = String(fy*rpr)+'px Segoe UI';
-          var x=Math.floor(sx*(xi+1.5)-fx.sum()/2+fx[0]);
-          var y=Math.floor(sy*(yi+1.5)+fy/2-fy*0.5);
-          if(map[xi][yi][0]!=-1) ctx.fillText(strmap1,x,y);
-          if(isplayer){
-            //replie
-            ctx.fillStyle='blue';
-            ctx.strokeStyle='blue';
-            var x=Math.floor(sx*(xi+1.5)-fx.sum()/2+fx[0]+fx[1]);
-            var y=Math.floor(sy*(yi+1.5)+fy/2-fy);
-            ctx.font = String(fy*rpr)*rpr+'px Segoe UI';
-            ctx.fillText(strrp,x,y);
-          }
+  //draw text
+  for(var xi=0;xi<ww[0];xi++){
+    for(var yi=0;yi<ww[1];yi++){
+      var p;
+      for(p=0;p<players;p++){
+        if(xi==pp[p][0] && yi==pp[p][1])break;
+      }
+      if(map[xi][yi][0]!=-1||isdrawreplie[p]){
+        var strmap0=String(map[xi][yi][0]);
+        var strmap1=String(map[xi][yi][1]);
+        var fy=Math.floor(sw[1]/(ww[1]+2)/2);
+        ctx.font = String(fy)+'px Segoe UI';
+        var fx=[    ctx.measureText(strmap0).width,
+                    ctx.measureText(strmap1).width*rpr,
+                p<2?ctx.measureText(String(rp[p])).width*rpr*rpr:0];
+        var rx=fx.sum()>sx?sx/fx.sum():1;
+        var ry=fy      >sy?sy/fy      :1;
+        var r=[rx,ry].min();
+        fx =mulkv(r,fx);
+        fy =      r*fy;
+        //parent
+        if(p<2){
+          ctx.fillStyle  = pcolor[p];
+          ctx.strokeStyle= pcolor[p];
+        }else{
+          ctx.fillStyle  = "black";
+          ctx.strokeStyle= "black";
+        }
+        ctx.font = String(fy)+'px Segoe UI';
+        var x=Math.floor(sx*(xi+1.5)-fx.sum()/2);
+        var y=Math.floor(sy*(yi+1.5)+fy      /2);
+        if(map[xi][yi][0]!=-1) ctx.fillText(strmap0,x,y);
+        //middo
+        ctx.fillStyle  = 'green';
+        ctx.strokeStyle= 'green';
+        ctx.font = String(fy*rpr)+'px Segoe UI';
+        var x=Math.floor(sx*(xi+1.5)-fx.sum()/2+fx[0]);
+        var y=Math.floor(sy*(yi+1.5)+fy/2-fy*0.5);
+        if(map[xi][yi][0]!=-1) ctx.fillText(strmap1,x,y);
+        if(p<2){
+          //replie
+          ctx.fillStyle='blue';
+          ctx.strokeStyle='blue';
+          var x=Math.floor(sx*(xi+1.5)-fx.sum()/2+fx[0]+fx[1]);
+          var y=Math.floor(sy*(yi+1.5)+fy/2-fy);
+          ctx.font = String(fy*rpr*rpr)+'px Segoe UI';
+          ctx.fillText(String(rp[p]),x,y);
         }
       }
     }
   }
+  
 }
 //event---------------------
-var reqretry = false;  // after game over
 var handleMouseDown = function(){
-  if(reqretry){
-    //return
-    setTimeout(initGame, 10);
+  switch(gamestate){
+    case gamestate_init:
+      gamestate=gamestate_proc;
+      return;
+    case gamestate_end:
+      setTimeout(initGame,10);
+      gamestate=gamestate_proc;
+      return;
+    default:
   }
 }
 var handleMouseDragging = function(){
@@ -333,16 +354,22 @@ var handleMouseUp = function(){
   var eraseindex = absdir[0]>absdir[1]?1:0;
   sgndir[eraseindex] = 0;
   if(absdir.max()>10 && nodraggingmove){
-    dp[0]=sgndir.clone();
+    dp[human]=sgndir.clone();
     nodraggingmove = false;
   }
 }
 var handleMouseWheel = function(){
 }
 var handleKeyDown = function(e){
-  if(reqretry){
-    setTimeout(initGame,10);
-    return;
+  switch(gamestate){
+    case gamestate_init:
+      gamestate=gamestate_proc;
+      return;
+    case gamestate_end:
+      setTimeout(initGame,10);
+      gamestate=gamestate_proc;
+      return;
+    default:
   }
   var k = e.key;
   var key2dir = [
@@ -358,7 +385,7 @@ var handleKeyDown = function(e){
     ["x"         ,[ 0,+1]]
   ];
   for(var i=0;i<key2dir.length;i++){
-    if(k==key2dir[i][0]) dp[0]=key2dir[i][1].clone();
+    if(k==key2dir[i][0]) dp[human]=key2dir[i][1].clone();
   }
 }
 //proc NPC
@@ -374,10 +401,10 @@ var procNpc = function(){
   //find direction
   for(var p=0;p<4;p++){
     _dp=dplist[_dpperm[p]];
-    pp1=add(pp[1],_dp);
+    pp1=add(pp[com],_dp);
     if(pp1[0]<0 || pp1[1]<0 || pp1[0]>=ww[0] || pp1[1]>=ww[1])continue;
     if(map[pp1[0]][pp1[1]]==-1)break;
   }
-  dp=_dp.clone();
+  dp[com]=_dp.clone();
 };
 
