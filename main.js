@@ -112,23 +112,26 @@ var procGame = function(){
 var moveGame=function(p){
   if(!isope[p]) return;
   
-  var pp1;
-  var rotcount = 0;
-  while(true){
-    pp1=add(dp[p],pp[p]);
-    //check wall
-    if(pp1[0]>=0 && pp1[1]>=0 && pp1[0]<ww[0] && pp1[1]<ww[1] && map[pp1[0]][pp1[1]][0]==-1){
-      break;
-    }else{
-      dp[p]=mulxv([[0,-1],[+1,0]],dp[p]); //rotate
-      rotcount++;
-      if(rotcount>=4){
-        cantmove[p]=true;
-        if(cantmove[human]&&cantmove[com]){
-          gameover(p); //4men soka
-        }
-        return;
+  var pp1=add(pp[p],dp[p]);
+  var _dpperm=dpperm[Math.floor(Math.random()*24)]; //try pattern
+  //check wall
+  var t;
+  if(!(pp1[0]>=0 && pp1[1]>=0 && pp1[0]<ww[0] && pp1[1]<ww[1] && map[pp1[0]][pp1[1]][0]==-1)){
+    //can't move in the direction
+    for(t=0;t<4;t++){
+      //find next direction
+      _dp=dplist[_dpperm[t]];
+      pp1=add(pp[p],_dp);
+      if(pp1[0]>=0 && pp1[1]>=0 && pp1[0]<ww[0] && pp1[1]<ww[1] && map[pp1[0]][pp1[1]][0]==-1){ //can move in the direction
+        break;
       }
+    }
+    if(t==4){//4-men soka
+      cantmove[p]=true;
+      if(cantmove[human]&&cantmove[com]){//both
+        gameover(p);//end game
+      }
+      return;
     }
   }
 
